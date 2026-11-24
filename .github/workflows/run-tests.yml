@@ -1,0 +1,45 @@
+name: Run Pytest
+
+on:
+  # Run on pushes to main only when Python code, tests or this workflow change
+  push:
+    branches: [ main ]
+    paths:
+      - "src/**.py"
+      - "tests/**.py"
+      - "requirements.txt"
+      - ".github/workflows/run-tests.yml"
+  # Run on pull requests into main, so code is tested before it is merged
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "src/**.py"
+      - "tests/**.py"
+      - "requirements.txt"
+      - ".github/workflows/run-tests.yml"
+  # Allow a manual run from the Actions tab (useful for the demo)
+  workflow_dispatch:
+
+# If several pushes arrive quickly, cancel the older run still in progress
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest -v --cov=src --cov-report=term-missing
